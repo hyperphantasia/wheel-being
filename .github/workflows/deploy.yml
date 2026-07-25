@@ -1,0 +1,67 @@
+name: Deploy to GitHub Pages
+
+# Builds the TypeScript source (src/**.ts -> dist/**.js) and publishes the
+# static site (index.html, css/, data/, dist/) to GitHub Pages.
+#
+# Requires one manual, one-time step in the repo settings - see the
+# "Deploying to GitHub Pages" section in README.md.
+
+on:
+  push:
+    branches: ["main"]
+  # Lets trigger a deploy manually from the Actions tab without a new commit.
+  workflow_dispatch:
+
+# Grants only what's needed to publish to Pages via OIDC - no personal access token or gh-pages branch required.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Avoid two deploys racing each other: let the latest push win.
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: "Type-check & build (tsc: src -> dist)"
+        run: npm run build
+
+      - name: Assemble static site
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp -r css _site/css
+          cp -r data _site/data
+          cp -r dist _site/dist
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

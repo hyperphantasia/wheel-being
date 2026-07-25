@@ -1,0 +1,26 @@
+{
+  "name": "wheel-of-wellbeing",
+  "version": "1.0.0",
+  "description": "Interactive radial data-story visualizing wellbeing across European countries (2004-2024).",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "serve": "npx http-server . -p 8080 -c-1",
+    "start": "npm run build && npm run serve"
+  },
+  "license": "CC0-1.0",
+  "keywords": [
+    "data-visualization",
+    "d3js",
+    "typescript",
+    "data-storytelling",
+    "wellbeing",
+    "hackaviz"
+  ],
+  "devDependencies": {
+    "@types/d3": "^7.4.3",
+    "typescript": "^7.0.2"
+  }
+}
