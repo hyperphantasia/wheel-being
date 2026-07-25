@@ -17,7 +17,7 @@
     "typescript",
     "data-storytelling",
     "wellbeing",
-    "hackaviz"
+    "dataviz"
   ],
   "devDependencies": {
     "@types/d3": "^7.4.3",
