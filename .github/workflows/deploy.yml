@@ -1,45 +1,16 @@
 name: Deploy to GitHub Pages
 
-# Builds the TypeScript source (src/**.ts -> dist/**.js) and publishes the
-# static site (index.html, css/, data/, dist/) to GitHub Pages.
-
-on:
-  push:
-    branches: ["main"]
-  # Lets trigger a deploy manually from the Actions tab without a new commit.
-  workflow_dispatch:
-
-# Grants only what's needed to publish to Pages via OIDC - no personal access token or gh-pages branch required.
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Avoid two deploys racing each other: let the latest push win.
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
-name: Deploy to GitHub Pages
-
-# Builds the TypeScript source (src/**.ts -> dist/**.js) and publishes the
-# static site (index.html, css/, data/, dist/) to GitHub Pages and creates
-# a release with the prebuilt dist for distribution.
-
-
 on:
   push:
     branches: ["main"]
     tags: ["v*"]
-  # Lets trigger a deploy manually from the Actions tab without a new commit.
   workflow_dispatch:
 
-# Grants only what's needed to publish to Pages via OIDC - no personal access token or gh-pages branch required.
 permissions:
   contents: write
   pages: write
   id-token: write
 
-# Avoid two deploys racing each other: let the latest push win.
 concurrency:
   group: "pages"
   cancel-in-progress: true
@@ -60,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: "Type-check & build (tsc: src -> dist)"
+      - name: Type-check & build (tsc: src -> dist)
         run: npm run build
 
       - name: Assemble static site
@@ -77,61 +48,19 @@ jobs:
           path: _site
 
       - name: Create release archive
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           cd _site
           zip -r ../wheel-being.zip .
           cd ..
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
         with:
           files: wheel-being.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: "Type-check & build (tsc: src -> dist)"
-        run: npm run build
-
-      - name: Assemble static site
-        run: |
-          mkdir -p _site
-          cp index.html _site/
-          cp -r css _site/css
-          cp -r data _site/data
-          cp -r dist _site/dist
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
 
   deploy:
     needs: build
