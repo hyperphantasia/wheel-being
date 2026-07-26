@@ -1,24 +1,30 @@
+# Workflow: Deploy to GitHub Pages and create releases on version tags
+# Triggered on: pushes to main branch, version tags (v*), or manual dispatch
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
-    tags: ["v*"]
-  workflow_dispatch:
+    branches: ["main"]        # Deploy to Pages on main branch pushes
+    tags: ["v*"]              # Create releases on version tags (v1.0.0, etc.)
+  workflow_dispatch:          # Allow manual workflow triggers
 
+# Define permissions needed for this workflow
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: write             # Needed to create GitHub Releases
+  pages: write                # Needed to deploy to GitHub Pages
+  id-token: write             # Needed for OIDC token generation
 
+# Prevent multiple concurrent deployments to avoid race conditions
 concurrency:
   group: "pages"
-  cancel-in-progress: true
+  cancel-in-progress: true    # Cancel in-progress runs when a new one starts
 
 jobs:
+  # Compile the project and prepare artifacts
   build:
     runs-on: ubuntu-latest
     steps:
+      # Fetch the repository code
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -26,10 +32,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: npm              # Cache npm dependencies for faster builds
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci              # deterministic installs
 
       - name: Build
         run: npm run build
@@ -42,11 +48,13 @@ jobs:
           cp -r data _site/data
           cp -r dist _site/dist
 
+      # For the deploy job
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
+      # For version tag pushes
       - name: Create release archive
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -54,6 +62,7 @@ jobs:
           zip -r ../wheel-being.zip .
           cd ..
 
+      #  Zip archive attached
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
@@ -62,9 +71,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Conditional deployment
   deploy:
-    needs: build
-    if: github.ref == 'refs/heads/main'
+    needs: build                              # Wait for build job to complete
+    if: github.ref == 'refs/heads/main'      # Only deploy from main branch, not tags
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -73,4 +83,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
