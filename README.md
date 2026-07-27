@@ -2,13 +2,17 @@
 
 **Rendez-vous with inspiration, s'il vous plaît!**
 
-![Banner Image](<img/la-roue-de-la-fortune-mb-game.png> "A board game from the 90s - la roue de la fortune.").<br>*[L'argent ne fait pas le bonheur](https://fr.wiktionary.org/wiki/l%E2%80%99argent_ne_fait_pas_le_bonheur) - French idiom.*
+![Banner Image](<img/la-roue-de-la-fortune-mb-game.png> "A board game from the 90s - la roue de la fortune.")<br>*[L'argent ne fait pas le bonheur](https://fr.wiktionary.org/wiki/l%E2%80%99argent_ne_fait_pas_le_bonheur) - French idiom.*
 
 ## Genesis
 
 > There’s that sweet moment before every big thing, before the commitment. When nothing’s started yet and everything still shines with an if, or a maybe. You don’t know what’s coming, not really, but the road is there. All ahead of you. So you hit the highway of your own thoughts and confusion intertwines with freedom. Then, suddenly, there it is: [crush](https://www.youtube.com/watch?v=5VJmR87-QbY)! This [one](https://www.nature.com/nature-index/news/data-visualization-these-are-the-happiest-countries-world-happiness-report-twenty-nineteen) actually.
 
-This [interactive data-story](https://hyperphantasia.github.io/wheel-being/) helps visualizing wellbeing across European countries from 2004 to 2024. Built with TypeScript and [D3.js](https://d3js.org), it has been crafted for and during the [Hackaviz 2026](https://toulouse-dataviz.fr/hackaviz/2026-contest/) competition.
+**Demo:**
+
+This [interactive data-story](https://hyperphantasia.github.io/wheel-being/) helps visualizing wellbeing across European countries from 2004 to 2024. 
+
+Built with TypeScript and [D3.js](https://d3js.org). It has been crafted for and during the [Hackaviz 2026](https://toulouse-dataviz.fr/hackaviz/2026-contest/) competition.
 
 ## Table of contents
 
@@ -308,6 +312,12 @@ See [contributing](CONTRIBUTING.md) file:
     - Never edit `dist/` directly.
 5. `npm run build` and confirm `tsc` reports zero errors before committing.
 6. If you touch `src/chart/arcs.ts` or `src/story.ts`, manually re-check: stage navigation, year scrubbing/auto-play, country selection, cluster mode, perception mode. They can break easily.
+
+## Acknowledgments
+
+The [Toulouse dataviz](https://toulouse-dataviz.fr/) [Meetup](https://www.meetup.com/meetup-visualisation-des-donnees-toulouse/). Thanks to their team for organizing the [Hackaviz 2026](https://github.com/Toulouse-Dataviz/hackaviz-2026) Edition.
+
+Ben Scott for the [radial](https://www.benscott.co.uk/wdvp/) inspiration.
 
 ## License
 
