@@ -8,34 +8,38 @@ on:
     tags: ["v*"]              # Create releases on version tags (v1.0.0, etc.)
   workflow_dispatch:          # Allow manual workflow triggers
 
-# Define permissions needed for this workflow
-permissions:
-  contents: write             # Needed to create GitHub Releases
-  pages: write                # Needed to deploy to GitHub Pages
-  id-token: write             # Needed for OIDC token generation
+# Deny by default. Each job opts in to only the scopes it needs.
+permissions: {}
 
-# Prevent multiple concurrent deployments to avoid race conditions
+# Don't cancel an in-progress run mid-deploy or mid-release. 
+# That can leave GitHub Pages or a release half-published.
 concurrency:
   group: "pages"
-  cancel-in-progress: true    # Cancel in-progress runs when a new one starts
+  cancel-in-progress: false
 
 jobs:
-  # Compile the project and prepare artifacts
+  # Compile the project and prepare artifacts. Untrusted code runs here
+  # (npm install scripts, the build itself) so this job gets read-only
+  # permissions: no contents:write, no pages:write, no id-token:write.
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      # Fetch the repository code
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
-          cache: npm              # Cache npm dependencies for faster builds
+          cache: npm
 
       - name: Install dependencies
-        run: npm ci              # deterministic installs
+        run: npm ci
 
       - name: Build
         run: npm run build
@@ -48,13 +52,11 @@ jobs:
           cp -r data _site/data
           cp -r dist _site/dist
 
-      # For the deploy job
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
           path: _site
 
-      # For version tag pushes
       - name: Create release archive
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -62,24 +64,50 @@ jobs:
           zip -r ../wheel-being.zip .
           cd ..
 
-      #  Zip archive attached
-      - name: Create GitHub Release
+      - name: Upload release archive
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
+        with:
+          name: release-archive
+          path: wheel-being.zip
+          retention-days: 1
+
+  # Publishes the GitHub Release. Only this job holds contents: write, and
+  # it never runs npm/arbitrary build tooling, it just downloads the
+  # artifact build already produced and attaches it.
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Download release archive
+        uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
+        with:
+          name: release-archive
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: wheel-being.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Conditional deployment
+  # Conditional deployment. Only from main, not from tags.
   deploy:
-    needs: build                              # Wait for build job to complete
-    if: github.ref == 'refs/heads/main'      # Only deploy from main branch, not tags
+    needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
